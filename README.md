@@ -1,4 +1,25 @@
-# PLIC Survey Automation System
+# PLIC Survey Automation
+
+Five AWS Lambda functions that automate the PLIC assessment survey lifecycle — survey creation, pre/post date management, scheduled reminders, and scored data uploads to S3 — integrated with Qualtrics and a Streamlit dashboard.
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Lambda Functions — Detailed Reference](#lambda-functions--detailed-reference)
+- [S3 Buckets](#s3-buckets)
+- [Qualtrics Integration](#qualtrics-integration)
+- [Email Templates](#email-templates)
+- [Environment Variables — Complete Reference](#environment-variables--complete-reference)
+- [Deployment Notes](#deployment-notes)
+- [Typical Survey Lifecycle](#typical-survey-lifecycle)
+- [Key Differences from BIOMAPS System](#key-differences-from-biomaps-system)
+- [Troubleshooting](#troubleshooting)
+- [File Structure](#file-structure)
+
+---
 
 ## Overview
 
@@ -12,34 +33,34 @@ Unlike single-survey assessments, PLIC uses a **pre/post design**: each instruct
 
 ```
 Instructor (via Qualtrics CIS)
-        |
-        v
-+----------------------+
-|  createPLICSurvey     |---- Creates a new PLIC survey from QSF template in Qualtrics
-+----------------------+
-        |
-        v
-+------------------------+
-|  update_inprogress      |---- Adds class to in-progress tracking CSV in S3
-+------------------------+
-        |
-        v
-+-----------------------+
-|  changePLICDates       |---- Lets instructors change close dates / reminders
-+-----------------------+
-        |
-        v
-+------------------+         (runs on a schedule via EventBridge)
-|  automatePLIC     |---- Monitors active surveys: sends memos, survey links,
-+------------------+     reminders, closes surveys, triggers data upload
-        |
-        v
-+---------------------------+
-|  uploadDashboardData       |---- Scores responses, matches pre/post, uploads to S3
-+---------------------------+
-        |
-        v
-   S3 Dashboard Bucket  ---- Consumed by Streamlit dashboard
+        │
+        ▼
+┌──────────────────┐
+│  createPLICSurvey │──── Creates a new PLIC survey from QSF template in Qualtrics
+└──────────────────┘
+        │
+        ▼
+┌────────────────────┐
+│  update_inprogress  │──── Adds class to in-progress tracking CSV in S3
+└────────────────────┘
+        │
+        ▼
+┌──────────────────┐
+│  changePLICDates  │──── Lets instructors change close dates / reminders
+└──────────────────┘
+        │
+        ▼
+┌────────────────┐
+│  automatePLIC   │──── Monitors active surveys: sends memos, survey links,
+└────────────────┘     reminders, closes surveys, triggers data upload
+        │              (runs on a schedule via EventBridge)
+        ▼
+┌───────────────────────┐
+│  uploadDashboardData   │──── Scores responses, matches pre/post, uploads to S3
+└───────────────────────┘
+        │
+        ▼
+   S3 Dashboard Bucket  ──── Consumed by Streamlit dashboard
 ```
 
 ### How Data Flows
@@ -64,6 +85,8 @@ Instructor (via Qualtrics CIS)
 ### 1. automatePLIC
 
 **Trigger:** Scheduled (AWS EventBridge / CloudWatch Events)
+
+**Qualtrics workflow connection:** Calls **Workflow 2 ("Send Requested Email")** via the `EMAIL_REQUEST_URL` to send all automated emails (memos, survey links, reminders, survey-closed notifications, and report-ready notifications). The Lambda constructs the email content and posts it as a JSON payload to the workflow's trigger URL.
 
 **Purpose:** The core automation engine. Runs periodically to monitor all active surveys and take action based on their close dates. Processes one action per invocation to stay within Lambda time limits and avoid overloading the Qualtrics API.
 
@@ -125,6 +148,8 @@ Instructor (via Qualtrics CIS)
 
 **Trigger:** API Gateway (HTTP POST)
 
+**Qualtrics workflow connection:** Called by **Workflow 1 ("Create All Requested Surveys")** as T-ID 1 (post-survey, SurveyType=`POST`) and T-ID 2 (pre-survey, SurveyType=`Pre`) when an instructor submits the Course Information Survey. The workflow passes in institution, instructor name, course number, semester, and survey type, and receives back a `surveyId` and `surveyLink`.
+
 **Purpose:** Creates a new PLIC survey in Qualtrics from the `plicsurvey.qsf` template. Returns the new survey's ID and link so the instructor can distribute it to students. Called once per survey (separately for pre and post).
 
 **What it does:**
@@ -170,6 +195,8 @@ Instructor (via Qualtrics CIS)
 ### 3. changePLICDates
 
 **Trigger:** API Gateway (HTTP POST)
+
+**Qualtrics workflow connection:** Called by **Workflow 3 ("Update Close Dates, Update CIS, and Send Email")** as T-ID 1 when an instructor submits the `PLIC_Date_Changes_2` form. The workflow passes in the requested close dates and reminder preferences, and receives back instructor details, a JSON payload for updating the CIS, and `PRE Update Possible` / `POST Update Possible` flags.
 
 **Purpose:** Allows instructors to modify the close date and reminder preferences for their pre-survey, post-survey, or both. If a survey was previously closed, this function reactivates it and re-adds the class to in-progress tracking.
 
@@ -218,6 +245,8 @@ Instructor (via Qualtrics CIS)
 
 **Trigger:** API Gateway (HTTP POST)
 
+**Qualtrics workflow connection:** Called by **Workflow 1 ("Create All Requested Surveys")** as T-ID 7 when an instructor submits the Course Information Survey. The workflow passes in the instructor's Response ID to add the class to the in-progress tracking CSV.
+
 **Purpose:** Adds a class/instructor to the in-progress tracking CSV. Used when a survey is created or managed outside the normal automated workflow and needs to be picked up by `automatePLIC`.
 
 **What it does:**
@@ -254,6 +283,8 @@ Instructor (via Qualtrics CIS)
 ### 5. uploadDashboardData
 
 **Trigger:** API Gateway (HTTP POST) or called internally by `automatePLIC`
+
+**Qualtrics workflow connection:** Not called directly by a Qualtrics workflow. Invoked by `automatePLIC` via HTTP when a post-survey closes, or can be called manually via the API Gateway endpoint.
 
 **Purpose:** The data processing pipeline. Downloads raw survey responses from Qualtrics for both pre- and post-surveys, validates and filters them, scores student answers using PLIC question weights, matches pre/post responses by student identity, and uploads the processed results to S3 for the Streamlit dashboard.
 
@@ -418,56 +449,56 @@ This workflow runs automatically when an instructor submits the CIS. It creates 
 
 ```
 Instructor submits CIS
-        |
-        v
-+---------------------------------------+
-|  T-ID 1: Create Post-PLIC Survey      |
-|  POST -> createPLICSurvey             |
-|  SurveyType = POST                    |
-|  Returns: postSurveyId, postSurveyLink|
-+---------------------------------------+
-        |
-        v
-+---------------------------------------+
-|  T-ID 7: Add course ID to InProgress  |
-|  POST -> update_inprogress            |
-|  Sends: Instructor_ID                 |
-+---------------------------------------+
-        |
-        v
-+---------------------------------------+
-|  Decision: NumSurveys == 1?           |
-+---------------------------------------+
-       / \
-      /   \
+        │
+        ▼
+┌───────────────────────────────────────┐
+│  T-ID 1: Create Post-PLIC Survey      │
+│  POST → createPLICSurvey              │
+│  SurveyType = POST                    │
+│  Returns: postSurveyId, postSurveyLink │
+└───────────────────────────────────────┘
+        │
+        ▼
+┌───────────────────────────────────────┐
+│  T-ID 7: Add course ID to InProgress  │
+│  POST → update_inprogress             │
+│  Sends: Instructor_ID                 │
+└───────────────────────────────────────┘
+        │
+        ▼
+┌───────────────────────────────────────┐
+│  Decision: NumSurveys == 1?            │
+└───────────────────────────────────────┘
+       ╱ ╲
+      ╱   ╲
   Branch 1           Otherwise
   (Post only)        (Pre + Post)
-     |                    |
-     v                    v
-+-----------+    +---------------------------------------+
-| T-ID 5:   |    |  T-ID 2: Create Pre-PLIC Survey      |
-| Email     |    |  POST -> createPLICSurvey             |
-| (post-    |    |  SurveyType = Pre                     |
-|  survey   |    |  Returns: preSurveyId, preSurveyLink  |
-|  link)    |    +---------------------------------------+
-+-----------+             |
-     |                    v
-     v             +-----------+
-+-----------+      | T-ID 6:   |
-| T-ID 3:   |      | Email     |
-| Update    |      | (pre-     |
-| CIS Data  |      |  survey   |
-+-----------+      |  link)    |
-     |             +-----------+
-     v                    |
- End of                   v
- workflow          +-----------+
-                   | T-ID 4:   |
-                   | Update    |
-                   | CIS Data  |
-                   +-----------+
-                        |
-                        v
+     │                    │
+     ▼                    ▼
+┌───────────┐    ┌───────────────────────────────────────┐
+│ T-ID 5:   │    │  T-ID 2: Create Pre-PLIC Survey       │
+│ Email     │    │  POST → createPLICSurvey              │
+│ (post-    │    │  SurveyType = Pre                     │
+│  survey   │    │  Returns: preSurveyId, preSurveyLink  │
+│  link)    │    └───────────────────────────────────────┘
+└───────────┘             │
+     │                    ▼
+     ▼             ┌───────────┐
+┌───────────┐      │ T-ID 6:   │
+│ T-ID 3:   │      │ Email     │
+│ Update    │      │ (pre-     │
+│ CIS Data  │      │  survey   │
+└───────────┘      │  link)    │
+     │             └───────────┘
+     ▼                    │
+ End of                   ▼
+ workflow          ┌───────────┐
+                   │ T-ID 4:   │
+                   │ Update    │
+                   │ CIS Data  │
+                   └───────────┘
+                        │
+                        ▼
                     End of
                     workflow
 ```
@@ -600,26 +631,26 @@ This is a simple email relay — the Lambda constructs the full email content an
 
 ```
 automatePLIC Lambda
-        |
-        v
-+------------------------------+
-|  JSON Trigger                 |
-|  "AWS Requests Email with     |
-|   JSON Trigger"               |
-|  Receives: emailAddress,      |
-|  emailSubject, emailBody      |
-+------------------------------+
-        |
-        v
-+------------------------------+
-|  T-ID 1: Send Requested Email|
-|  From: CPERL@cornell.edu     |
-|  (Cornell Physics Education   |
-|   Research Lab)               |
-|  To/Subject/Body from trigger |
-+------------------------------+
-        |
-        v
+        │
+        ▼
+┌──────────────────────────────┐
+│  JSON Trigger                 │
+│  "AWS Requests Email with     │
+│   JSON Trigger"               │
+│  Receives: emailAddress,      │
+│  emailSubject, emailBody      │
+└──────────────────────────────┘
+        │
+        ▼
+┌──────────────────────────────┐
+│  T-ID 1: Send Requested Email │
+│  From: CPERL@cornell.edu      │
+│  (Cornell Physics Education    │
+│   Research Lab)                │
+│  To/Subject/Body from trigger  │
+└──────────────────────────────┘
+        │
+        ▼
     End of workflow
 ```
 
@@ -652,73 +683,73 @@ This workflow runs when an instructor submits the date change form. It first val
 ```
 Instructor submits PLIC_Date_Changes_2 form
 (provides ResponseID, new close dates, reminder preferences)
-        |
-        v
-+----------------------------------------------+
-|  Decision: At least one survey change         |
-|  requested?                                   |
-|  Q3 "Which survey would you like to change    |
-|  the end date for?" Selected Count > 0        |
-+----------------------------------------------+
-        | (if yes)
-        v
-+----------------------------------------------+
-|  T-ID 1: Initiate necessary changes for CIS  |
-|  POST -> changePLICDates Lambda               |
-|  Returns: Email, Instructor name, Course      |
-|  info, JSON Request, PRE/POST Update Possible |
-+----------------------------------------------+
-        |
-        v
-+----------------------------------------------+
-|  T-ID 5: Update CIS Response's Embedded Data |
-|  PUT -> Qualtrics API                         |
-|  Uses JSON Request from T-ID 1               |
-+----------------------------------------------+
-        |
-        v
-+----------------------------------------------+
-|  Decision: Both pre- and post-survey          |
-|  changes are requested?                       |
-|  (PRE Update Possible == true AND             |
-|   POST Update Possible == true)               |
-+----------------------------------------------+
-       / \
-      /   \
+        │
+        ▼
+┌──────────────────────────────────────────────┐
+│  Decision: At least one survey change         │
+│  requested?                                   │
+│  Q3 "Which survey would you like to change    │
+│  the end date for?" Selected Count > 0        │
+└──────────────────────────────────────────────┘
+        │ (if yes)
+        ▼
+┌──────────────────────────────────────────────┐
+│  T-ID 1: Initiate necessary changes for CIS  │
+│  POST → changePLICDates Lambda                │
+│  Returns: Email, Instructor name, Course      │
+│  info, JSON Request, PRE/POST Update Possible │
+└──────────────────────────────────────────────┘
+        │
+        ▼
+┌──────────────────────────────────────────────┐
+│  T-ID 5: Update CIS Response's Embedded Data  │
+│  PUT → Qualtrics API                          │
+│  Uses JSON Request from T-ID 1                │
+└──────────────────────────────────────────────┘
+        │
+        ▼
+┌──────────────────────────────────────────────┐
+│  Decision: Both pre- and post-survey          │
+│  changes are requested?                       │
+│  (PRE Update Possible == true AND             │
+│   POST Update Possible == true)               │
+└──────────────────────────────────────────────┘
+       ╱ ╲
+      ╱   ╲
   Branch 1           Otherwise
   (Both)
-     |                    |
-     v                    v
-+-----------+    +--------------------------------------+
-| T-ID 2:   |    |  Decision: Only pre-survey change    |
-| Email     |    |  is requested and valid?             |
-| (both     |    |  (PRE Update Possible == true)       |
-|  dates)   |    +--------------------------------------+
-+-----------+           / \
-     |                 /   \
-     v             Branch 1     Otherwise
+     │                    │
+     ▼                    ▼
+┌───────────┐    ┌──────────────────────────────────────┐
+│ T-ID 2:   │    │  Decision: Only pre-survey change     │
+│ Email     │    │  is requested and valid?              │
+│ (both     │    │  (PRE Update Possible == true)        │
+│  dates)   │    └──────────────────────────────────────┘
+└───────────┘           ╱ ╲
+     │                 ╱   ╲
+     ▼             Branch 1     Otherwise
  End of           (Pre only)
- workflow            |              |
-                     v              v
-              +-----------+  +-------------------------------+
-              | T-ID 3:   |  |  Decision: Only post-survey   |
-              | Email     |  |  change is requested and valid?|
-              | (pre-     |  |  (POST Update Possible == true)|
-              |  survey   |  +-------------------------------+
-              |  date)    |         |
-              +-----------+     Branch 1
-                   |           (Post only)
-                   v              |
-               End of             v
-               workflow    +-----------+
-                           | T-ID 4:   |
-                           | Email     |
-                           | (post-    |
-                           |  survey   |
-                           |  date)    |
-                           +-----------+
-                                |
-                                v
+ workflow            │              │
+                     ▼              ▼
+              ┌───────────┐  ┌───────────────────────────────┐
+              │ T-ID 3:   │  │  Decision: Only post-survey    │
+              │ Email     │  │  change is requested and valid? │
+              │ (pre-     │  │  (POST Update Possible == true) │
+              │  survey   │  └───────────────────────────────┘
+              │  date)    │         │
+              └───────────┘     Branch 1
+                   │           (Post only)
+                   ▼              │
+               End of             ▼
+               workflow    ┌───────────┐
+                           │ T-ID 4:   │
+                           │ Email     │
+                           │ (post-    │
+                           │  survey   │
+                           │  date)    │
+                           └───────────┘
+                                │
+                                ▼
                             End of
                             workflow
 ```
@@ -917,35 +948,35 @@ All email templates are in `automatePLIC/utilities/` and use Python string forma
 
 ```
 1. Instructor fills out CIS in Qualtrics
-                |
-2. createPLICSurvey (x2) --> Pre-survey and Post-survey created + activated
-                |
-3. update_inprogress --> Class added to in-progress tracking
-                |
+                │
+2. createPLICSurvey (x2) ──► Pre-survey and Post-survey created + activated
+                │
+3. update_inprogress ──► Class added to in-progress tracking
+                │
 4. Instructor receives email with pre-survey link
-                |
+                │
 5. Instructor distributes pre-survey link to students
-                |
+                │
 6. Students complete the pre-survey
-                |
-    +-----------------------------------------------+
-    |  automatePLIC (scheduled, recurring)           |
-    |                                                |
-    |  PRE-SURVEY PHASE:                             |
-    |  * Sends reminder if close date <= 4 days      |
-    |  * Closes pre-survey when date passes          |
-    |  * Sends "survey closed" email                 |
-    |                                                |
-    |  POST-SURVEY PHASE:                            |
-    |  * Sends memo 16 days before close             |
-    |  * Sends post-survey link 14 days before close |
-    |  * Sends reminder if close date <= 4 days      |
-    |  * Closes post-survey when date passes         |
-    |  * Triggers data upload on close               |
-    +-----------------------------------------------+
-                |
-7. uploadDashboardData --> Scores pre+post, matches students, uploads to S3
-                |
+                │
+    ┌───────────────────────────────────────────────┐
+    │  automatePLIC (scheduled, recurring)           │
+    │                                                │
+    │  PRE-SURVEY PHASE:                             │
+    │  • Sends reminder if close date ≤ 4 days       │
+    │  • Closes pre-survey when date passes          │
+    │  • Sends "survey closed" email                 │
+    │                                                │
+    │  POST-SURVEY PHASE:                            │
+    │  • Sends memo 16 days before close             │
+    │  • Sends post-survey link 14 days before close │
+    │  • Sends reminder if close date ≤ 4 days       │
+    │  • Closes post-survey when date passes         │
+    │  • Triggers data upload on close               │
+    └───────────────────────────────────────────────┘
+                │
+7. uploadDashboardData ──► Scores pre+post, matches students, uploads to S3
+                │
 8. Streamlit dashboard reads from S3 and displays results
 ```
 
