@@ -981,39 +981,39 @@ If an instructor needs to reopen or extend a survey, they use the **date change 
 
 ```
 automatePLIC/
-|-- lambda_function.py          (main orchestrator)
-|-- utilities/
-|   |-- qualtrics_utils.py      (API calls for surveys)
-|   |-- email_utils.py          (email building & sending)
-|   |-- memo.txt                (email template)
-|   |-- survey_sent.txt         (email template)
-|   |-- reminder.txt            (email template)
-|   |-- survey_closed.txt       (email template)
-|   +-- report_sent.txt         (email template)
-+-- [requests, certifi, urllib3, charset_normalizer bundles]
+├── lambda_function.py          (main orchestrator)
+├── utilities/
+│   ├── qualtrics_utils.py      (API calls for surveys)
+│   ├── email_utils.py          (email building & sending)
+│   ├── memo.txt                (email template)
+│   ├── survey_sent.txt         (email template)
+│   ├── reminder.txt            (email template)
+│   ├── survey_closed.txt       (email template)
+│   └── report_sent.txt         (email template)
+└── [requests, certifi, urllib3, charset_normalizer bundles]
 
 changePLICDates/
-|-- lambda_function.py          (HTTP endpoint for date changes)
-+-- [requests library bundles]
+├── lambda_function.py          (HTTP endpoint for date changes)
+└── [requests library bundles]
 
 createPLICSurvey/
-|-- lambda_function.py          (survey creation)
-|-- plicsurvey.qsf              (QSF template)
-+-- [requests library bundles]
+├── lambda_function.py          (survey creation)
+├── plicsurvey.qsf              (QSF template)
+└── [requests library bundles]
 
 update_inprogress/
-+-- lambda_function.py          (CSV utility)
+└── lambda_function.py          (CSV utility)
 
 uploadDashboardData/
-|-- lambda_function.py          (main handler)
-|-- utilities/
-|   |-- compiling_utils.py      (orchestrator)
-|   |-- qualtrics_utils.py      (API & exports)
-|   |-- processing_utils.py     (name/response matching)
-|   |-- scoring_utils.py        (PLIC scoring)
-|   |-- ColumnOrdering_June2025.csv  (column order spec)
-|   +-- QuestionText_June2025.csv    (scoring weights)
-+-- [requests, pandas, numpy bundles]
+├── lambda_function.py          (main handler)
+├── utilities/
+│   ├── compiling_utils.py      (orchestrator)
+│   ├── qualtrics_utils.py      (API & exports)
+│   ├── processing_utils.py     (name/response matching)
+│   ├── scoring_utils.py        (PLIC scoring)
+│   ├── ColumnOrdering_June2025.csv  (column order spec)
+│   └── QuestionText_June2025.csv    (scoring weights)
+└── [requests, pandas, numpy bundles]
 ```
 
 ---
