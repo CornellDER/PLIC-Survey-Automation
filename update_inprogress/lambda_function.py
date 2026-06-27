@@ -1,3 +1,4 @@
+# update_inprogress Lambda function
 import json
 import boto3
 import os

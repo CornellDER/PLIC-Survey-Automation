@@ -1,3 +1,4 @@
+# automatePLIC Lambda function
 import boto3
 import json
 import os
