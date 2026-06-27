@@ -15,8 +15,8 @@ Five AWS Lambda functions that automate the PLIC assessment survey lifecycle —
 - [Environment Variables — Complete Reference](#environment-variables--complete-reference)
 - [Deployment Notes](#deployment-notes)
 - [Typical Survey Lifecycle](#typical-survey-lifecycle)
-- [Troubleshooting](#troubleshooting)
 - [File Structure](#file-structure)
+- [Troubleshooting](#troubleshooting)
 - [Acknowledgements](#acknowledgements)
 
 
@@ -977,24 +977,6 @@ If an instructor needs to reopen or extend a survey, they use the **date change 
 
 ---
 
-## Troubleshooting
-
-| Symptom | Likely Cause | Resolution |
-|---------|-------------|------------|
-| Survey not being monitored by automation | Class ID missing from in-progress CSV | Call `update_inprogress` to add it |
-| Reminder emails not sending | Reminder field already has a date value in CIS response, or close date is more than 4 days away | Use `changePLICDates` to reset reminder preference |
-| Survey not closing automatically | Class ID not in in-progress CSV, or `automatePLIC` schedule is paused | Verify EventBridge rule is active and class is tracked |
-| Post-survey link not being sent | `Post-Survey Sent` field already has a date, or close date is more than 14 days away | Check CIS embedded data; use `changePLICDates` to reset if needed |
-| Dashboard data not appearing | `uploadDashboardData` failed or hasn't run yet | Check Lambda CloudWatch logs; may need to invoke manually |
-| Duplicate data in dashboard | Survey was reopened and re-closed | The upload function handles this by removing existing rows with the same Class_ID before appending |
-| Pre/post student matching is poor | Students used different names or IDs on pre vs. post surveys | Matching uses full name, reversed name, and student ID — unmatched responses are still included |
-| 403 errors on API calls | `EXPECTED_TOKEN` mismatch between caller and Lambda | Verify environment variables match across all functions |
-| Qualtrics API errors | Token expired or rate-limited | Verify `QUALTRICS_API_TOKEN` is current; check Qualtrics API limits |
-| `automatePLIC` not processing all surveys | By design, it processes one action per invocation | Ensure the EventBridge schedule runs frequently enough (e.g., every few minutes) |
-| Date change form not working | Instructor used wrong Response ID, or survey ID is missing from CIS | Verify the CIS response has the expected Survey ID fields populated |
-
----
-
 ## File Structure
 
 ```
@@ -1033,6 +1015,24 @@ uploadDashboardData/
 |   +-- QuestionText_June2025.csv    (scoring weights)
 +-- [requests, pandas, numpy bundles]
 ```
+
+---
+
+## Troubleshooting
+
+| Symptom | Likely Cause | Resolution |
+|---------|-------------|------------|
+| Survey not being monitored by automation | Class ID missing from in-progress CSV | Call `update_inprogress` to add it |
+| Reminder emails not sending | Reminder field already has a date value in CIS response, or close date is more than 4 days away | Use `changePLICDates` to reset reminder preference |
+| Survey not closing automatically | Class ID not in in-progress CSV, or `automatePLIC` schedule is paused | Verify EventBridge rule is active and class is tracked |
+| Post-survey link not being sent | `Post-Survey Sent` field already has a date, or close date is more than 14 days away | Check CIS embedded data; use `changePLICDates` to reset if needed |
+| Dashboard data not appearing | `uploadDashboardData` failed or hasn't run yet | Check Lambda CloudWatch logs; may need to invoke manually |
+| Duplicate data in dashboard | Survey was reopened and re-closed | The upload function handles this by removing existing rows with the same Class_ID before appending |
+| Pre/post student matching is poor | Students used different names or IDs on pre vs. post surveys | Matching uses full name, reversed name, and student ID — unmatched responses are still included |
+| 403 errors on API calls | `EXPECTED_TOKEN` mismatch between caller and Lambda | Verify environment variables match across all functions |
+| Qualtrics API errors | Token expired or rate-limited | Verify `QUALTRICS_API_TOKEN` is current; check Qualtrics API limits |
+| `automatePLIC` not processing all surveys | By design, it processes one action per invocation | Ensure the EventBridge schedule runs frequently enough (e.g., every few minutes) |
+| Date change form not working | Instructor used wrong Response ID, or survey ID is missing from CIS | Verify the CIS response has the expected Survey ID fields populated |
 
 ---
 
