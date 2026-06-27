@@ -15,7 +15,6 @@ Five AWS Lambda functions that automate the PLIC assessment survey lifecycle —
 - [Environment Variables — Complete Reference](#environment-variables--complete-reference)
 - [Deployment Notes](#deployment-notes)
 - [Typical Survey Lifecycle](#typical-survey-lifecycle)
-- [Key Differences from BIOMAPS System](#key-differences-from-biomaps-system)
 - [Troubleshooting](#troubleshooting)
 - [File Structure](#file-structure)
 - [Acknowledgements](#acknowledgements)
@@ -983,26 +982,6 @@ All email templates are in `automatePLIC/utilities/` and use Python string forma
 ```
 
 If an instructor needs to reopen or extend a survey, they use the **date change form**, which triggers **changePLICDates**. This reactivates the survey, sets a new close date, clears tracking fields, and re-adds the class to in-progress tracking so `automatePLIC` picks it up again.
-
----
-
-## Key Differences from BIOMAPS System
-
-This system follows the same architecture as the BIOMAPS survey automation system, with these key differences:
-
-| Aspect | BIOMAPS | PLIC |
-|--------|---------|------|
-| Survey design | Single survey per instructor (4 assessment types) | Pre/post survey pair per instructor (1 assessment type) |
-| QSF templates | 4 templates (Capstone, EcoEvo-MAPS, GenBio-MAPS, Phys-MAPS) | 1 template (`plicsurvey.qsf`) used for both pre and post |
-| Survey naming | `{Year}_{Institution}_{Number}_{Last}_{Type}_{ID}` | `{Semester}{Year}_{Institution}_{Number}_{Last}_{PRE/POST}_{ID}` |
-| Automation emails | 2 templates (reminder, report_sent) | 5 templates (memo, survey_sent, reminder, survey_closed, report_sent) |
-| Automation timeline | Reminder at 4 days, close on date | Memo at 16 days, link at 14 days, reminder at 4 days, close on date |
-| Scoring | Assessment-specific answer keys and construct groupings | PLIC-specific weighted scoring with contradictory-pair handling |
-| Attitude constructs | None | SelfEfficacy, PerceivedAgency, Belonging (reverse-coded), Recognition |
-| Pre/post matching | Not applicable (single survey) | Matches by full name, reversed name, and student ID |
-| Dashboard data | Separate files per assessment type | Single file with `_PRE` and `_POST` suffixed columns |
-| Administered by | BIOMAPS@cornell.edu | Cornell Physics Education Research Lab |
-| Dashboard URL | (separate app) | `plicdashboard.streamlit.app` |
 
 ---
 
