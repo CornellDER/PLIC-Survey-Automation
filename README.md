@@ -2,6 +2,9 @@
 
 Five AWS Lambda functions that automate the PLIC assessment survey lifecycle — survey creation, pre/post date management, scheduled reminders, and scored data uploads to S3 — integrated with Qualtrics and a Streamlit dashboard.
 
+**Live info:** [PLIC at Cornell](https://cperl.lassp.cornell.edu/PLIC)
+**PhysPort:** [PLIC on PhysPort](https://www.physport.org/assessments/assessment.cfm?A=PLIC)
+
 ---
 
 ## Table of Contents
