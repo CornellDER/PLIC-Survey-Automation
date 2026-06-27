@@ -1,4 +1,4 @@
-# uploadDashboardData Lambda function
+# Scores survey responses and uploads processed data to S3 for the Streamlit dashboard
 import boto3
 import json
 import os
