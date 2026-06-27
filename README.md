@@ -835,7 +835,7 @@ Note: The `JSON Request` value from T-ID 1 is injected directly into the `embedd
 
 > Dear Dr. ~{ch://OCAC_NFVla3SpDfMXrix/$["Instructor First"]} ~{ch://OCAC_NFVla3SpDfMXrix/$["Instructor Last"]},
 >
-> Thank you again for participating in the PLIC Pre-survey. Changes were recently made to the close date for your class, ~{ch://OCAC_NFVla3SpDfMXrix/$["Course Name"]} (~{ch://OCAC_NFVla3SpDfMXrix/$["Course Number"]}). This Pre-survey is currently set to close for students on the following date (yyyy/mm/dd):
+> Thank you again for participating in the PLIC Pre-survey. Changes were recently made to the close date for your class, \~{ch://OCAC_NFVla3SpDfMXrix/$["Course Name"]} (\~{ch://OCAC_NFVla3SpDfMXrix/$["Course Number"]}). This Pre-survey is currently set to close for students on the following date (yyyy/mm/dd):
 >
 > ${q://QID19/ChoiceTextEntryValue}
 >
@@ -859,7 +859,7 @@ Note: The `JSON Request` value from T-ID 1 is injected directly into the `embedd
 
 > Dear Dr. ~{ch://OCAC_NFVla3SpDfMXrix/$["Instructor First"]} ~{ch://OCAC_NFVla3SpDfMXrix/$["Instructor Last"]},
 >
-> Thank you again for participating in the PLIC Post-survey. Changes were recently made to the close date for your class, ~{ch://OCAC_NFVla3SpDfMXrix/$["Course Name"]} (~{ch://OCAC_NFVla3SpDfMXrix/$["Course Number"]}). This Post-survey is currently set to close for students on the following date (yyyy/mm/dd):
+> Thank you again for participating in the PLIC Post-survey. Changes were recently made to the close date for your class, \~{ch://OCAC_NFVla3SpDfMXrix/$["Course Name"]} (\~{ch://OCAC_NFVla3SpDfMXrix/$["Course Number"]}). This Post-survey is currently set to close for students on the following date (yyyy/mm/dd):
 >
 > ${q://QID18/ChoiceTextEntryValue}
 >
