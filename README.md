@@ -18,6 +18,8 @@ Five AWS Lambda functions that automate the PLIC assessment survey lifecycle —
 - [Key Differences from BIOMAPS System](#key-differences-from-biomaps-system)
 - [Troubleshooting](#troubleshooting)
 - [File Structure](#file-structure)
+- [Acknowledgements](#acknowledgements)
+
 
 ---
 
@@ -1060,3 +1062,9 @@ uploadDashboardData/
 |   +-- QuestionText_June2025.csv    (scoring weights)
 +-- [requests, pandas, numpy bundles]
 ```
+
+---
+
+## Acknowledgements
+
+Current dashboard built by Matthew Dew. Previous iteration developed by Cole Walsh. Original PLIC server based on work by Wilcox, Zwickl, Hobbs, Aiken, Welch, & Lewandowski (2016).
