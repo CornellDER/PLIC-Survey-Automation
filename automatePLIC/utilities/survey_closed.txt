@@ -1,0 +1,16 @@
+Dear Dr. {first_name} {last_name},
+
+Thank you again for participating in the {survey_type} survey. The {survey_condition}-survey for your course, {course_name} ({course_number}), is now closed. A total of {response_count} students completed this iteration of the survey. If you are offering credit for completing this survey, their names will be provided at the conclusion of the post-instruction survey at the end of the course.
+
+The next survey will be available for your students beginning {open_date}. We will send you a link to the survey at that time.
+
+If you would like to change the date that the next survey will stop accepting responses from students, please complete the form here with your unique ID ({course_identifier}):
+
+{change_url}
+
+Let us know by replying to this email if you have any questions about this process.
+
+Thank you,
+{survey_admin}
+
+This message was sent by an automated system.

@@ -1,0 +1,16 @@
+Dear Dr. {first_name} {last_name},
+
+Thank you again for participating in the {survey_type} survey. You can access your class data via our data explorer app. The data explorer app is available at the following link:
+
+{dashboard_url}
+
+To use the data explorer app, you must provide your unique class identifier, “{course_identifier}”. From the data explorer app, you may also download IDENTIFIABLE student data from your class to use in additional offline analyses.
+
+Note that data is not made immediately available in the data explorer. The system is updated approximately every 24 hours.
+
+We are continuing to test and improve our new report generation system, so please let us know by replying to this email if you have any questions, comments, or suggestions regarding this new report format.
+
+Thank you,
+{survey_admin}
+
+This message was sent by an automated system.

@@ -1,0 +1,88 @@
+name: Deploy Lambda Functions
+
+on:
+  push:
+    branches: [main]
+
+env:
+  AWS_REGION: us-east-2
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      automatePLIC: ${{ steps.changes.outputs.automatePLIC }}
+      changePLICDates: ${{ steps.changes.outputs.changePLICDates }}
+      createPLICSurvey: ${{ steps.changes.outputs.createPLICSurvey }}
+      update_inprogress: ${{ steps.changes.outputs.update_inprogress }}
+      uploadDashboardData: ${{ steps.changes.outputs.uploadDashboardData }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changed functions
+        id: changes
+        run: |
+          changed=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "ALL")
+          for func in automatePLIC changePLICDates createPLICSurvey update_inprogress uploadDashboardData; do
+            if echo "$changed" | grep -q "^${func}/" || echo "$changed" | grep -q "ALL"; then
+              echo "${func}=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "${func}=false" >> "$GITHUB_OUTPUT"
+            fi
+          done
+
+  deploy:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - function: automatePLIC
+            changed: ${{ needs.detect-changes.outputs.automatePLIC }}
+          - function: changePLICDates
+            changed: ${{ needs.detect-changes.outputs.changePLICDates }}
+          - function: createPLICSurvey
+            changed: ${{ needs.detect-changes.outputs.createPLICSurvey }}
+          - function: update_inprogress
+            changed: ${{ needs.detect-changes.outputs.update_inprogress }}
+          - function: uploadDashboardData
+            changed: ${{ needs.detect-changes.outputs.uploadDashboardData }}
+    steps:
+      - name: Skip if unchanged
+        if: matrix.changed != 'true'
+        run: echo "No changes in ${{ matrix.function }}, skipping deploy."
+
+      - uses: actions/checkout@v4
+        if: matrix.changed == 'true'
+
+      - name: Set up Python
+        if: matrix.changed == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Configure AWS credentials
+        if: matrix.changed == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install dependencies and package
+        if: matrix.changed == 'true'
+        run: |
+          cd ${{ matrix.function }}
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt -t .
+          fi
+          zip -r ../deployment.zip . -x "__pycache__/*" "*.pyc" "requirements.txt"
+
+      - name: Deploy to AWS Lambda
+        if: matrix.changed == 'true'
+        run: |
+          aws lambda update-function-code \
+            --function-name ${{ matrix.function }} \
+            --zip-file fileb://deployment.zip

@@ -1,0 +1,16 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Bundled pip dependencies (installed during CI/CD deploy)
+*/requests/
+*/certifi/
+*/charset_normalizer/
+*/idna/
+*/urllib3/
+*/bin/
+*/*.dist-info/

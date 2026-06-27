@@ -1,0 +1,16 @@
+Dear Dr. {first_name} {last_name},
+
+Thank you again for participating in the {survey_type} survey. You will receive the link to the {survey_type} {survey_condition}-instruction survey for your course, {course_name} ({course_number}), on the following date:
+{open_date}
+This link will remain active remain active until:
+{close_date}
+If you would like to change the date that the {survey_condition}-survey will stop accepting responses from students, please complete the form here with your unique ID ({course_identifier}):
+
+{change_url}
+
+Let us know by replying to this email if you have any questions about this process.
+
+Thank you,
+{survey_admin}
+
+This message was sent by an automated system.

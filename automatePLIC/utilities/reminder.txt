@@ -1,0 +1,19 @@
+Dear Dr. {first_name} {last_name},
+
+This is a reminder from the {survey_admin} team about the {survey_type} {survey_condition}-survey for {course_name} ({course_number}) which will close on {close_date}.
+
+So far there have been {response_count} responses to the survey.
+
+Here is another link to the survey:
+{survey_url}
+
+If you would like to change the date that the survey will stop accepting responses from students, please complete the form here with your unique ID ({course_identifier}):
+
+{change_url}
+
+Let us know by replying to this email if you have any questions about this process.
+
+Thank you,
+{survey_admin}
+
+This message was sent by an automated system.
