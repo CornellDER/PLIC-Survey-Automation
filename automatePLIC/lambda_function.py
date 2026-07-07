@@ -6,6 +6,7 @@ import csv
 import io
 import requests
 import datetime
+from zoneinfo import ZoneInfo
 
 from utilities.email_utils import send_email
 from utilities.qualtrics_utils import update_response_data, get_response_data, close_survey
@@ -108,8 +109,8 @@ def lambda_handler(event, context):
             pre_closed = values.get("Pre-Survey Closed")
             post_sent = values.get("Post-Survey Sent")
 
-            # Get current time for comparisons
-            current_date = datetime.datetime.today().date()
+            # Get current date in Eastern time for comparisons
+            current_date = datetime.datetime.now(tz=ZoneInfo("America/New_York")).date()
             
             # Format dates for comparisons
             if pre_close_date not in (None, ""):
